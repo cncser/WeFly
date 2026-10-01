@@ -1,5 +1,6 @@
 import './preload-env'
-import { app, BrowserWindow, ipcMain, nativeTheme, Tray, Menu, nativeImage, shell } from 'electron'
+//import { app, BrowserWindow, ipcMain, nativeTheme, Tray, Menu, nativeImage, shell } from 'electron'
+import { app, BrowserWindow, ipcMain, nativeTheme, session, Tray, globalShortcut, Menu, nativeImage } from 'electron'
 import { Worker } from 'worker_threads'
 import { fork, type ChildProcess, type ForkOptions } from 'child_process'
 import { createHash, randomUUID } from 'crypto'
@@ -1100,7 +1101,7 @@ const resolveAppIconPath = (): string => {
   }
   return join(__dirname, `../public/${iconName}`)
 }
-
+/*
 const requestMainWindowCloseConfirmation = (win: BrowserWindow): void => {
   if (isClosePromptVisible) return
   isClosePromptVisible = true
@@ -1110,7 +1111,7 @@ const requestMainWindowCloseConfirmation = (win: BrowserWindow): void => {
     restoreMethod: restoreMethod ?? undefined
   })
 }
-
+*/
 function createWindow(options: { autoShow?: boolean } = {}) {
   // 获取图标路径 - 打包后在 resources 目录
   const { autoShow = true } = options
@@ -1173,7 +1174,7 @@ function createWindow(options: { autoShow?: boolean } = {}) {
       return
     }
 
-    if (closeBehavior === 'tray' && canKeepMainWindowInBackground()) {
+    if (closeBehavior === 'tray'/* && canKeepMainWindowInBackground()*/) {
       win.hide()
       return
     }
@@ -3329,10 +3330,10 @@ function registerIpcHandlers() {
 
     try {
       if (action === 'tray') {
-        if (canKeepMainWindowInBackground()) {
+        //if (canKeepMainWindowInBackground()) {
           mainWindow.hide()
           return true
-        }
+        //}
         return false
       }
 
@@ -5574,7 +5575,7 @@ app.whenReady().then(async () => {
   // 提前创建主窗口（隐藏），让渲染进程加载与数据库预热并行进行
   updateSplashProgress(20, '正在准备主窗口...')
   mainWindow = createWindow({ autoShow: false })
-
+/*
   const resolvedTrayIcon = resolveAppIconPath()
 
   try {
@@ -5619,7 +5620,7 @@ app.whenReady().then(async () => {
   } catch (e) {
     console.warn('[Tray] Failed to create tray icon:', e)
   }
-
+*/
   // 会话、头像和消息由已加载的渲染进程按需获取。这里不再串行预热，
   // 避免数据库/头像缓存慢查询把主窗口最多阻塞数十秒。
   updateSplashProgress(70, '正在准备主窗口...', true)
@@ -5640,10 +5641,24 @@ app.whenReady().then(async () => {
 
   if (!onboardingDone) {
     createOnboardingWindow()
-  } else if (startInBackground && tray) {
+  } else if (startInBackground/* && tray*/) {
     mainWindow?.hide()
   } else {
     mainWindow?.show()
+  }
+
+  const isShortcutRegistered = globalShortcut.register('CommandOrControl+Shift+W', () => {
+    if (mainWindow) {
+      if (mainWindow.isMinimized()) mainWindow.restore() // 如果最小化了则恢复
+      mainWindow.show()
+      mainWindow.focus()
+    }
+  })
+  
+  if (!isShortcutRegistered) {
+    console.warn('[Shortcut] 快捷键 CommandOrControl+Shift+W 注册失败')
+  } else {
+    console.log('[Shortcut] 快捷键 CommandOrControl+Shift+W 注册成功')
   }
 
   // 依赖数据库的后台服务在窗口显示后再启动，避免与启动预热争抢数据库 worker
@@ -5683,7 +5698,8 @@ const shutdownAppServices = async (): Promise<void> => {
   shutdownPromise = (async () => {
     isAppQuitting = true
     // 销毁 tray 图标
-    if (tray) { try { tray.destroy() } catch {} tray = null }
+    //if (tray) { try { tray.destroy() } catch {} tray = null }
+    globalShortcut.unregisterAll()
     // 通知窗使用 hide 而非 close，退出时主动销毁，避免残留窗口阻塞进程退出。
     destroyNotificationWindow()
     messagePushService.stop()
