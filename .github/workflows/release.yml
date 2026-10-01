@@ -49,6 +49,7 @@ jobs:
           cache: "npm"
       - name: Install Dependencies
         run: npm install --ignore-scripts
+             npm install --legacy-peer-deps
 
       - name: Sync version with tag
         shell: bash
@@ -108,6 +109,7 @@ jobs:
           cache: "npm"
       - name: Install Dependencies
         run: npm install
+             npm install --legacy-peer-deps
 
       - name: Sync version with tag
         shell: bash
@@ -159,6 +161,7 @@ jobs:
           cache: 'npm'
       - name: Install Dependencies
         run: npm install
+             npm install --legacy-peer-deps
 
       - name: Sync version with tag
         shell: bash
@@ -210,6 +213,7 @@ jobs:
           cache: 'npm'
       - name: Install Dependencies
         run: npm install
+             npm install --legacy-peer-deps
 
       - name: Sync version with tag
         shell: bash
